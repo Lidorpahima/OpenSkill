@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  user_service:
+    build:
+      context: ./services/user_service
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./services/user_service:/app
+    depends_on:
+      - db
+
+  learning_service:
+    build:
+      context: ./services/learning_service
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./services/learning_service:/app
+    depends_on:
+      - db
+
+  db:
+    image: postgres
+    environment:
+      POSTGRES_USER: upskill_user
+      POSTGRES_PASSWORD: strongpassword
+      POSTGRES_DB: upskill_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
