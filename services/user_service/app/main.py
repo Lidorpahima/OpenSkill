@@ -21,6 +21,7 @@ async def init_models():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+
     await init_models()
     yield
 

@@ -1,21 +1,21 @@
 from pydantic import BaseModel
+from enum import Enum
+from typing import Optional
 
-# יצירת מטרה לימודית
+class GoalStatus(str, Enum):
+    IN_PROGRESS = "IN_PROGRESS"
+    COMPLETED = "COMPLETED"
+
 class LearningGoalCreate(BaseModel):
     title: str
     description: str
 
-# תשובה עם נתוני מטרה לימודית
-class LearningGoalResponse(BaseModel):
+class LearningGoalResponse(BaseModel): 
     id: int
     title: str
     description: str
-
-    class Config:
-        from_attributes  = True
-
-class GoalDescription(BaseModel):
-    description: str
+    status: GoalStatus
+    progress: float
 
     class Config:
         from_attributes = True

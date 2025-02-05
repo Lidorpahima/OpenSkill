@@ -9,43 +9,65 @@ from sqlalchemy.sql import func
 from fastapi import Query, Depends
 from sqlalchemy.future import select
 from . import models, schemas, database
-
-app = FastAPI()
+from fastapi import FastAPI, Depends, Query
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+from . import models, schemas, database
+from .auth import verify_token
+from typing import List, Optional
+from contextlib import asynccontextmanager
 
 
 
 async def init_models():
     async with database.engine.begin() as conn:
         await conn.run_sync(models.Base.metadata.create_all)
-# להריץ את יצירת הטבלאות כשהשרת מתחיל
-@app.on_event("startup")
-async def startup_event():
-    await init_models()
 
-# נקודת בדיקה בסיסית
-@app.get("/")
-async def read_root():
-    return {"message": "Server is running!"}
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await init_models()
+    yield
+
+app = FastAPI(lifespan=lifespan)
 
 
 @app.post("/create_goal/", response_model=schemas.LearningGoalResponse)
 async def create_goal(goal: schemas.LearningGoalCreate, user=Depends(verify_token), db: AsyncSession = Depends(database.get_db)):
     try:
-        db_goal = models.LearningGoal(user_id=user["user_id"], title=goal.title, description=goal.description)
+        print(f"User ID: {user['user_id']} is creating a goal with title: {goal.title}")
+        
+        db_goal = models.LearningGoal(
+            user_id=user["user_id"],
+            title=goal.title,
+            description=goal.description,
+            progress=0.0
+        )
         db.add(db_goal)
         await db.commit()
         await db.refresh(db_goal)
+        print("Goal created successfully:", db_goal)
         return db_goal
+
     except Exception as e:
         await db.rollback()
+        print(f"Error: {str(e)}")  # הדפסה ל-debug
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/goals/", response_model=List[schemas.LearningGoalResponse])
+async def get_goals(
+    status: Optional[schemas.GoalStatus] = Query(None),  # אפשרות לסנן לפי סטטוס
+    user=Depends(verify_token),
+    db: AsyncSession = Depends(database.get_db)
+):
+    query = select(models.LearningGoal).filter(models.LearningGoal.user_id == user["user_id"])
+    
+    if status:
+        query = query.filter(models.LearningGoal.status == status)
 
-# שליפת מטרות לימוד (רק למשתמש המחובר)
-@app.get("/goals/", response_model=list[schemas.LearningGoalResponse])
-async def get_goals(user=Depends(verify_token), db: AsyncSession = Depends(database.get_db)):
-    result = await db.execute(select(models.LearningGoal).filter(models.LearningGoal.user_id == user["user_id"]))
+    result = await db.execute(query)
     goals = result.scalars().all()
+    if not goals: 
+        return []
     return goals
 
 # עדכון מטרה
@@ -103,3 +125,30 @@ async def search_goals(
     result = await db.execute(query)
     goals = result.scalars().all()  # הפוך את התוצאה לרשימה של אובייקטים
     return goals
+
+
+
+
+
+
+
+
+
+'''
+ UPDATE PROGRESS FOR A LEARNING GOAL PROGRESS 
+async def update_progress(goal_id: int, db: AsyncSession):
+    result = await db.execute(select(models.LearningGoal).filter(models.LearningGoal.id == goal_id))
+    goal = result.scalar_one_or_none()
+
+    if goal:
+        # כאן נחשב את אחוז ההתקדמות (לדוגמה, לפי מספר מבחנים שהושלמו)
+        # כרגע נשתמש בערך דמי (50%) כדוגמה
+        goal.progress = 50.0  
+        
+        # אם ההתקדמות 100%, נשנה את הסטטוס ל-COMPLETED
+        if goal.progress == 100.0:
+            goal.status = models.GoalStatus.COMPLETED
+
+        await db.commit()
+        await db.refresh(goal)
+'''
