@@ -1,4 +1,3 @@
-# 📦 קבצים של Python שאינם נחוצים
 __pycache__/
 *.py[cod]
 *.so
@@ -6,50 +5,40 @@ __pycache__/
 *.sqlite3
 *.db
 
-# 📜 קבצים של Virtual Environments (venv)
 venv/
 env/
 *.venv
 
-# 🔥 קובצי הגדרות אישיים
 *.env
 .env.local
 .env.production
 .env.test
 !.env.example
 
-# ⚙️ קבצי מערכת של VSCode, PyCharm ועוד
 .vscode/
 .idea/
 *.iml
 
-# 🐳 קבצים של Docker
 docker-compose.override.yml
 *.pid
 
-# 📁 תיקיות של מחברות Jupyter (אם יש לך)
 .ipynb_checkpoints/
 
-# 📦 קבצי תלויות שאינם נדרשים במאגר
 Pipfile
 Pipfile.lock
 poetry.lock
 
-# 🚀 קבצים שנוצרים על ידי Uvicorn / Gunicorn
 logs/
 *.log
 *.pid
 *.sock
 *.coverage
 
-# 🔥 קובצי קומפילציה של PostgreSQL ו-SQLAlchemy
 migrations/
 alembic/
 
-# 📂 קבצים ותיקיות של API Documentation
 docs/_build/
 
-# 🔒 מפתחות וגישה לשירותים חיצוניים (אל תשמור גישה ב-Git!)
 keys/
 certs/
 secrets.json
