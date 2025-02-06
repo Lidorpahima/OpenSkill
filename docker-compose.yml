@@ -21,6 +21,16 @@ services:
     depends_on:
       - db
 
+  assessment_service:
+    build:
+      context: ./services/assessment_service
+    ports:
+      - "8002:8002"
+    volumes:
+      - ./services/assessment_service:/app
+    depends_on:
+      - db
+
   db:
     image: postgres
     environment:
