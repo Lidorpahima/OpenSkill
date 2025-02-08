@@ -78,3 +78,13 @@ async def protected_route(token: str = Depends(OAuth2PasswordBearer(tokenUrl="lo
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
     return {"message": f"Hello, {user['sub']}! You have access."}
+
+@app.get("/users/{user_id}")
+async def get_user(user_id: int, db: AsyncSession = Depends(database.get_db)):
+    result = await db.execute(select(models.User).filter(models.User.id == user_id))
+    user = result.scalars().first()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return {"id": user.id, "username": user.username, "email": user.email}

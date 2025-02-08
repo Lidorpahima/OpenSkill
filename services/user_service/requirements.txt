@@ -6,3 +6,4 @@ passlib[bcrypt]
 python-jose
 python-dotenv
 asyncpg
+redis

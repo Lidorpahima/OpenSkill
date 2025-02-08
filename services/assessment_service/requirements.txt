@@ -4,3 +4,7 @@ requests
 pydantic
 sqlalchemy
 asyncpg
+openai
+python-dotenv
+tiktoken
+redis

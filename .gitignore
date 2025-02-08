@@ -14,7 +14,7 @@ env/
 .env.production
 .env.test
 !.env.example
-
+.env.*
 .vscode/
 .idea/
 *.iml
