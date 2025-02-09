@@ -1,31 +1,37 @@
-import openai 
 import os
+import requests
+import json
 from dotenv import load_dotenv
 import tiktoken
-from openai import OpenAIError
 
+# טען את המשתנים מסביבת העבודה
 load_dotenv()
-openai.api_key = os.getenv("OPENAI_API_KEY")
+openrouter_api_key = os.getenv("OPENROUTER_API_KEY")
 
-def num_tokens_from_string(string, model="gpt-4o-mini"):
-    encoding = tiktoken.encoding_for_model(model)
-    return len(encoding.encode(string))
-
-#Method to ask GPT-4o mini a question
-def ask_gpt(message, model="gpt-4o-mini", max_tokens=50, max_input_length=100):
-    tokenCount = num_tokens_from_string(message, model)
-    if num_tokens_from_string(message, model) > max_input_length:
-        return f"⚠️ Please keep your answer under {max_input_length} words.(Used {tokenCount}) ⚠️"
+# Method to ask the model a question
+def ask_gpt(message, model="sophosympatheia/rogue-rose-103b-v0.2:free"):
     try:
-        print("Token count: ", tokenCount)
-        openai.api_key = os.getenv("OPENAI_API_KEY")
-        client = openai.OpenAI(api_key=openai.api_key)
-        response = client.chat.completions.create(
-            model=model,
-            messages=[{"role": "user", "content": message}],
-            max_tokens=max_tokens
+        response = requests.post(
+            url="https://openrouter.ai/api/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {openrouter_api_key}",
+                "Content-Type": "application/json",
+                "HTTP-Referer": "https://your-site-url.com",  # Optional
+                "X-Title": "Your Site Name",  # Optional
+            },
+            data=json.dumps({
+                "model": model,
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": message
+                    }
+                ],
+            })
         )
-        return response.choices[0].message.content
+        response_data = response.json()
+        return response_data['choices'][0]['message']['content']
 
-    except OpenAIError as e:
+    except Exception as e:
         return f"❌ Error: {str(e)} ❌"
+

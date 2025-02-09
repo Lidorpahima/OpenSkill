@@ -17,11 +17,24 @@ router = APIRouter()
 MAX_HISTORY_MESSAGES = 5 
 
 system_message = (
-    "You are an AI career assistant. Guide the user step by step.\n"
-    "Keep answers short. Confirm their response in 1 sentence.\n"
-    "Then, ask exactly **one** follow-up question.\n"
-    "Avoid details. Do not ask multiple questions."
+    "You are an AI career assistant. Your goal is to help the user discover a suitable career path.\n"
+    "✅ Start by understanding their interests, skills, and preferences.\n"
+    "✅ Ask one **specific** and **personalized** question at a time.\n"
+    "✅ Keep responses **short and direct** (1-2 sentences max).\n"
+    "✅ If the user's answer is vague, ask for **clarification**.\n"
+    "✅ Focus on career-related topics such as:\n"
+    "   - Personal strengths and skills.\n"
+    "   - Subjects or activities they enjoy.\n"
+    "   - Work environment preferences (office, remote, outdoors, etc.).\n"
+    "   - Interests in technology, creativity, problem-solving, or leadership.\n"
+    "\n"
+    "🚫 Do **not** ask multiple questions at once.\n"
+    "🚫 Do **not** give career recommendations until 5 questions have been answered.\n"
+    "🚫 Do **not** provide long explanations—keep it short and engaging.\n"
+    "\n"
+    "Ask the next logical **follow-up question** based on the user’s previous answer."
 )
+
 
 @router.post("/chat/")
 async def chat_with_ai(chat: ChatMessage, db: AsyncSession = Depends(database.get_db)):
@@ -31,6 +44,12 @@ async def chat_with_ai(chat: ChatMessage, db: AsyncSession = Depends(database.ge
     user_key = f"chat_history:{user_id}"
     chat_history = redis_client.lrange(user_key, -MAX_HISTORY_MESSAGES * 2, -1)
 
+    cached_recommendations = redis_client.get(f"career_recommendations:{user_id}")
+    if cached_recommendations:
+        recommended_careers = json.loads(cached_recommendations)
+        return ChatResponse(response="You've already received career recommendations. Please select a career or restart the process",
+             recommendation=recommended_careers)
+    
     history_text = f"System: {system_message}\n"
     for i in range(0, len(chat_history), 2):
         history_text += f"User: {chat_history[i]}\nAI: {chat_history[i + 1]}\n"
@@ -47,9 +66,9 @@ async def chat_with_ai(chat: ChatMessage, db: AsyncSession = Depends(database.ge
 
     if len(chat_history) >= (MAX_HISTORY_MESSAGES - 1) * 2:
         recommended_careers = await recommend_learning_path(user_id, chat_history, db)
-        print(f"🔍 DEBUG: Recommended Careers → {recommended_careers}")  # בודק שהתשובה תקינה
-        recommendation = [CareerRecommendation(**career) for career in recommended_careers]
-        return 
+        print(f"🔍 DEBUG: Recommended Careers → {recommended_careers}") 
+        if recommended_careers:
+            recommendation = [CareerRecommendation(**career) for career in recommended_careers]
         
     return ChatResponse(response=ai_response, recommendation=recommendation)
 

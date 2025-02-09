@@ -14,4 +14,4 @@ class CareerRecommendation(BaseModel):
 
 class ChatResponse(BaseModel):
     response: str
-
+    recommendation: Optional[List[CareerRecommendation]] = None  
