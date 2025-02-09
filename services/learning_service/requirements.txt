@@ -7,3 +7,4 @@ asyncio
 python-jose
 passlib[bcrypt]
 redis
+requests

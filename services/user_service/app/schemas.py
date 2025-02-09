@@ -1,9 +1,6 @@
 from pydantic import BaseModel, EmailStr
 
-class UserCreate(BaseModel):
-    username: str
-    email: EmailStr
-    password: str
+
 
 class UserResponse(BaseModel):
     id: int
@@ -11,7 +8,7 @@ class UserResponse(BaseModel):
     email: EmailStr
 
     class Config:
-        from_attributes = True  # מוודא שהמודל תומך בשימוש עם SQLAlchemy
+        from_attributes = True  
 
 class LoginRequest(BaseModel):
     email: EmailStr
@@ -22,5 +19,10 @@ class TokenResponse(BaseModel):
     token_type: str
 
 class VerifyUserRequest(BaseModel):
+    email: EmailStr
+    password: str
+
+class UserCreate(BaseModel):
+    username: str
     email: EmailStr
     password: str

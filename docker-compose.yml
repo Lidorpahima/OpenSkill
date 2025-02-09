@@ -11,6 +11,7 @@ services:
     depends_on:
       - db
       - redis
+      - auth_service
     env_file:
       - .env
     networks:
@@ -27,6 +28,8 @@ services:
     depends_on:
       - db
       - redis
+      - user_service
+      - auth_service
     env_file:
       - .env
     networks:
@@ -56,9 +59,10 @@ services:
       context: ./services/authentication_service
     ports:
       - "8003:8003"
+    volumes:
+      - ./services/authentication_service:/app
     depends_on:
       - db
-      - user_service
     env_file:
       - .env
     networks:
