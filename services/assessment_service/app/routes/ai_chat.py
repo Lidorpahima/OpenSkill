@@ -45,10 +45,7 @@ async def chat_with_ai(chat: ChatMessage, db: AsyncSession = Depends(database.ge
     chat_history = redis_client.lrange(user_key, -MAX_HISTORY_MESSAGES * 2, -1)
 
     cached_recommendations = redis_client.get(f"career_recommendations:{user_id}")
-    if cached_recommendations:
-        recommended_careers = json.loads(cached_recommendations)
-        return ChatResponse(response="You've already received career recommendations. Please select a career or restart the process",
-             recommendation=recommended_careers)
+
     
     history_text = f"System: {system_message}\n"
     for i in range(0, len(chat_history), 2):
@@ -56,13 +53,18 @@ async def chat_with_ai(chat: ChatMessage, db: AsyncSession = Depends(database.ge
 
     prompt = f"{history_text}\nUser: {chat.message}\nAI:"
 
-    ai_response = ask_gpt(prompt, max_input_length=300)
+    if cached_recommendations:
+        recommended_careers = json.loads(cached_recommendations)
+        return ChatResponse(response="You've already received career recommendations. Please select a career or restart the process",
+                recommendation=recommended_careers)
+    else:
+        ai_response = ask_gpt(prompt)
 
     redis_client.rpush(user_key, chat.message, ai_response)
     redis_client.ltrim(user_key, -MAX_HISTORY_MESSAGES * 2, -1)
 
     recommendation = None
-    print(f"🔍 DEBUG: chat_history length → {len(chat_history)}")  # בודק האם באמת יש 5 תשובות
+    print(f"🔍 DEBUG: chat_history length → {len(chat_history)}") 
 
     if len(chat_history) >= (MAX_HISTORY_MESSAGES - 1) * 2:
         recommended_careers = await recommend_learning_path(user_id, chat_history, db)
@@ -93,24 +95,21 @@ async def recommend_learning_path(user_id: int, chat_history, db: AsyncSession):
         "]\n"
         "Do **not** add any text before or after the JSON.\n"
         "**Your answer must be a complete valid JSON array in one response. Do NOT split the response.**"
+        f"\n\n{messages}"
     )
 
     try:
-        ai_response = ask_gpt(summary_prompt, max_input_length=1000)
+        ai_response = ask_gpt(summary_prompt)
         print(f"🔍 DEBUG: AI Raw Response → {ai_response}")  # Debugging
 
-        # ניקוי תשובה - הסרת ` ```json ` אם קיים
         cleaned_response = ai_response.strip().strip("```json").strip("```").strip()
 
-        # בדיקה אם ה-JSON קטוע, ננסה לתקן
         if not cleaned_response.endswith("]"):
             print("⚠️ WARNING: AI response seems to be incomplete. Attempting to fix...")
-            cleaned_response += "]"  # הוספת סוגר חסר
+            cleaned_response += "]" 
 
-        # ניסיון לטעון את ה-JSON
         recommended_careers = json.loads(cleaned_response)
 
-        # בדיקה האם קיבלנו 3 קריירות, אם לא - נבקש שוב
         if not isinstance(recommended_careers, list) or len(recommended_careers) != 3:
             raise ValueError("AI response is not a valid list of 3 careers.")
 
@@ -120,14 +119,13 @@ async def recommend_learning_path(user_id: int, chat_history, db: AsyncSession):
     except (json.JSONDecodeError, ValueError) as e:
         print(f"❌ ERROR: Invalid AI response format → {str(e)}")
 
-        # אם ה-AI החזיר תשובה ריקה או לא תקינה, נבקש תיקון
         print("⚠️ WARNING: AI response was invalid. Requesting clarification...")
         clarification_prompt = (
             "Your last response was empty or incomplete. Please return the full JSON response again.\n"
             "Do **not** add any extra text. Just return the valid JSON array."
         )
 
-        ai_response = ask_gpt(clarification_prompt, max_input_length=500)
+        ai_response = ask_gpt(clarification_prompt)
         cleaned_response = ai_response.strip().strip("```json").strip("```").strip()
 
         try:
@@ -191,4 +189,4 @@ async def check_user_exists(user_id: int):
     if response.status_code == 404:
         raise HTTPException(status_code=404, detail="User does not exist")
 
-    return response.json()  # מחזיר את נתוני המשתמש
+    return response.json()  
