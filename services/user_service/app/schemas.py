@@ -1,26 +1,26 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 
-# רישום משתמש
 class UserCreate(BaseModel):
     username: str
-    email: str
+    email: EmailStr
     password: str
 
-# תשובת API עם פרטי משתמש
 class UserResponse(BaseModel):
     id: int
     username: str
-    email: str
+    email: EmailStr
 
     class Config:
-        orm_mode = True
+        from_attributes = True  # מוודא שהמודל תומך בשימוש עם SQLAlchemy
 
-# בקשת התחברות (Login)
-class UserLogin(BaseModel):
-    username: str
+class LoginRequest(BaseModel):
+    email: EmailStr
     password: str
 
-# תשובה לאחר התחברות (Token)
-class Token(BaseModel):
+class TokenResponse(BaseModel):
     access_token: str
     token_type: str
+
+class VerifyUserRequest(BaseModel):
+    email: EmailStr
+    password: str

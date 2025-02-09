@@ -1,4 +1,5 @@
 version: '3.8'
+
 services:
   user_service:
     build:
@@ -10,9 +11,11 @@ services:
     depends_on:
       - db
       - redis
-    environment:
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
+    env_file:
+      - .env
+    networks:
+      - app_network
+    restart: always
 
   learning_service:
     build:
@@ -24,9 +27,11 @@ services:
     depends_on:
       - db
       - redis
-    environment:
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
+    env_file:
+      - .env
+    networks:
+      - app_network
+    restart: always
 
   assessment_service:
     build:
@@ -35,36 +40,58 @@ services:
       - "8002:8002"
     volumes:
       - ./services/assessment_service:/app
-    env_file:
-      - .env
     depends_on:
       - db
       - redis
       - user_service
-    environment:
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
+      - auth_service
+    env_file:
+      - .env
+    networks:
+      - app_network
+    restart: always
+
+  auth_service:
+    build:
+      context: ./services/authentication_service
+    ports:
+      - "8003:8003"
+    depends_on:
+      - db
+      - user_service
+    env_file:
+      - .env
+    networks:
+      - app_network
+    restart: always
 
   db:
-    image: postgres
+    image: postgres:latest
     environment:
-      POSTGRES_USER: upskill_user
-      POSTGRES_PASSWORD: strongpassword
-      POSTGRES_DB: upskill_db
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app_network
+    restart: always
+
   redis:
     image: redis:latest
     container_name: redis
     ports:
       - "6379:6379"
-    command: ["redis-server", "--save", "", "--appendonly", "no"] 
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    networks:
+      - app_network
     restart: always
-
 
 volumes:
   postgres_data:
 
-
+networks:
+  app_network:
+    driver: bridge
