@@ -4,7 +4,6 @@ from typing import List, Dict, Optional
 
 
 class ChatMessage(BaseModel):
-    user_id: int
     message: str
 
 class CareerRecommendation(BaseModel):
@@ -14,4 +13,7 @@ class CareerRecommendation(BaseModel):
 
 class ChatResponse(BaseModel):
     response: str
-    recommendation: Optional[List[CareerRecommendation]] = None  
+    recommendation: Optional[List[CareerRecommendation]] = None 
+     
+class CareerSelectRequest(BaseModel):
+    career_id: int

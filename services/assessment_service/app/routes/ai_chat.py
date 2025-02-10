@@ -1,19 +1,21 @@
 import os
 import json
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Header
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from .. import database, models
 from .chat_request import ask_gpt
-from .schemas import ChatMessage, ChatResponse, CareerRecommendation
+from .schemas import ChatMessage, ChatResponse, CareerRecommendation, CareerSelectRequest
 from ..database import redis_client  
 from .models import UserCareerChoice
 import requests
-import random
 
 
 router = APIRouter()
 
+AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL")  
+LEARNING_SERVICE_URL = os.getenv("LEARNING_SERVICE_URL")
+USER_SERVICE_URL = os.getenv("USER_SERVICE_URL")
 MAX_HISTORY_MESSAGES = 5 
 
 system_message = (
@@ -35,11 +37,43 @@ system_message = (
     "Ask the next logical **follow-up question** based on the user’s previous answer."
 )
 
+summary_prompt = (
+        "STOP ASKING QUESTIONS. IT'S TIME TO CHOOSE A CAREER.\n"
+        "You **must** return exactly 3 career options, no more, no less.\n"
+        "Each career should have:\n"
+        "- `title`: A 2-3 word career name.\n"
+        "- `description`: A reason (max 15 words).\n"
+        "- `match_percentage`: A number between 50 and 100.\n"
+        "Return **only** this JSON format, no explanations:\n"
+        "[\n"
+        "  { \"title\": \"Career 1\", \"description\": \"Short reason\", \"match_percentage\": 85 },\n"
+        "  { \"title\": \"Career 2\", \"description\": \"Short reason\", \"match_percentage\": 75 },\n"
+        "  { \"title\": \"Career 3\", \"description\": \"Short reason\", \"match_percentage\": 60 }\n"
+        "]\n"
+        "Do **not** add any text before or after the JSON.\n"
+        "**Your answer must be a complete valid JSON array in one response. Do NOT split the response.**"
+        
+)
+
+async def verify_token(authorization: str = Header(...)):
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Invalid token format")
+
+    token = authorization.split("Bearer ")[1]  # חילוץ ה-Token האמיתי
+    response = requests.get(f"{AUTH_SERVICE_URL}/auth/verify_token", headers={"Authorization": authorization})
+
+    if response.status_code != 200:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    user_data = response.json()
+    user_data["token"] = token  
+    return user_data
+
+
 
 @router.post("/chat/")
-async def chat_with_ai(chat: ChatMessage, db: AsyncSession = Depends(database.get_db)):
-    user_id = chat.user_id
-    await check_user_exists(user_id)
+async def chat_with_ai(chat: ChatMessage, user=Depends(verify_token), db: AsyncSession = Depends(database.get_db)):
+    user_id = int(user["user_id"])
 
     user_key = f"chat_history:{user_id}"
     chat_history = redis_client.lrange(user_key, -MAX_HISTORY_MESSAGES * 2, -1)
@@ -64,43 +98,21 @@ async def chat_with_ai(chat: ChatMessage, db: AsyncSession = Depends(database.ge
     redis_client.ltrim(user_key, -MAX_HISTORY_MESSAGES * 2, -1)
 
     recommendation = None
-    print(f"🔍 DEBUG: chat_history length → {len(chat_history)}") 
 
     if len(chat_history) >= (MAX_HISTORY_MESSAGES - 1) * 2:
         recommended_careers = await recommend_learning_path(user_id, chat_history, db)
-        print(f"🔍 DEBUG: Recommended Careers → {recommended_careers}") 
         if recommended_careers:
             recommendation = [CareerRecommendation(**career) for career in recommended_careers]
         
     return ChatResponse(response=ai_response, recommendation=recommendation)
 
 
-import json
-
 async def recommend_learning_path(user_id: int, chat_history, db: AsyncSession):
     messages = "\n".join([f"User: {chat_history[i]}\nAI: {chat_history[i + 1]}" for i in range(0, len(chat_history), 2)])
-    
-    summary_prompt = (
-        "STOP ASKING QUESTIONS. IT'S TIME TO CHOOSE A CAREER.\n"
-        "You **must** return exactly 3 career options, no more, no less.\n"
-        "Each career should have:\n"
-        "- `title`: A 2-3 word career name.\n"
-        "- `description`: A **VERY SHORT** reason (max 8 words).\n"
-        "- `match_percentage`: A number between 50 and 100.\n"
-        "Return **only** this JSON format, no explanations:\n"
-        "[\n"
-        "  { \"title\": \"Career 1\", \"description\": \"Short reason\", \"match_percentage\": 85 },\n"
-        "  { \"title\": \"Career 2\", \"description\": \"Short reason\", \"match_percentage\": 75 },\n"
-        "  { \"title\": \"Career 3\", \"description\": \"Short reason\", \"match_percentage\": 60 }\n"
-        "]\n"
-        "Do **not** add any text before or after the JSON.\n"
-        "**Your answer must be a complete valid JSON array in one response. Do NOT split the response.**"
-        f"\n\n{messages}"
-    )
+    local_summary_prompt = summary_prompt + f"\n\n{messages}"
 
     try:
-        ai_response = ask_gpt(summary_prompt)
-        print(f"🔍 DEBUG: AI Raw Response → {ai_response}")  # Debugging
+        ai_response = ask_gpt(local_summary_prompt)
 
         cleaned_response = ai_response.strip().strip("```json").strip("```").strip()
 
@@ -145,34 +157,50 @@ async def recommend_learning_path(user_id: int, chat_history, db: AsyncSession):
                     "match_percentage": 0
                 }
             ]
+@router.get("/career_recommendations/")
+async def display_recommendations(user=Depends(verify_token)):
+    user_id = int(user["user_id"])
 
-
-
-@router.post("/chat/select_career/")
-async def select_career(user_id: int, career_id: int, db: AsyncSession = Depends(database.get_db)):
     cached_recommendations = redis_client.get(f"career_recommendations:{user_id}")
 
     if not cached_recommendations:
         raise HTTPException(status_code=404, detail="No career recommendations found. Try answering more questions.")
 
     recommended_careers = json.loads(cached_recommendations)
+    return recommended_careers
 
+
+
+
+@router.post("/select_career/")
+async def select_career(career_data: CareerSelectRequest, user=Depends(verify_token)):
+    user_id = int(user["user_id"])
+    career_id = career_data.career_id 
+    token = user["token"]  
+
+    cached_recommendations = redis_client.get(f"career_recommendations:{user_id}")
+    
+    if not cached_recommendations:
+        raise HTTPException(status_code=404, detail="No career recommendations found. Try answering more questions.")
+
+    recommended_careers = json.loads(cached_recommendations)
     selected_career = next((career for career in recommended_careers if career["id"] == career_id), None)
 
     if not selected_career:
         raise HTTPException(status_code=400, detail="Invalid career choice.")
 
-    db_career = UserCareerChoice(
-        user_id=user_id,
-        title=selected_career["title"],
-        description=selected_career["description"]
+    response = requests.post(
+        f"{LEARNING_SERVICE_URL}/learning/create_goal/",
+        json={"title": selected_career["title"], "description": selected_career["description"]},
+        headers={"Authorization": f"Bearer {token}"}
     )
-    db.add(db_career)
-    await db.commit()
+
+    if response.status_code != 200:
+        raise HTTPException(status_code=401, detail=f"Could not save career choice. Error: {response.text}")
 
     redis_client.delete(f"career_recommendations:{user_id}")
+    redis_client.delete(f"chat_history:{user_id}")
     return {"message": f"Career '{selected_career['title']}' saved successfully!", "career": selected_career}
-
 
 def save_recommendations_to_redis(user_id, recommended_careers):
     for i, career in enumerate(recommended_careers, start=1):
@@ -180,8 +208,7 @@ def save_recommendations_to_redis(user_id, recommended_careers):
 
     redis_client.set(f"career_recommendations:{user_id}", json.dumps(recommended_careers))
 
-
-USER_SERVICE_URL = "http://user_service:8000"  
+  
 
 async def check_user_exists(user_id: int):
     response = requests.get(f"{USER_SERVICE_URL}/users/{user_id}")
@@ -190,3 +217,5 @@ async def check_user_exists(user_id: int):
         raise HTTPException(status_code=404, detail="User does not exist")
 
     return response.json()  
+
+    

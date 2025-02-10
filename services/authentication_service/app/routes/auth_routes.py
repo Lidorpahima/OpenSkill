@@ -39,17 +39,18 @@ async def register_user(user: UserCreate):
 
 
 @router.get("/verify_token")
-async def verify_token_route(authorization: str = Header(None)):  
+async def verify_token_route(authorization: str = Header(...)):  
+    print("Auth check 1")
     if not authorization:
         raise HTTPException(status_code=401, detail="Authorization header is missing")
-    
+    print("Auth check 2")
     if not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Invalid token format")
-
+    print("Auth check 3")
     token = authorization.split("Bearer ")[1]
-
+    print("Auth check 4")
     user = verify_token(token)
     if not user:
         raise HTTPException(status_code=401, detail="Invalid token")
-
+    print("Auth check 5")
     return {"user_id": int(user["user_id"])}

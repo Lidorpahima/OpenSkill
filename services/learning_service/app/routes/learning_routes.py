@@ -12,15 +12,15 @@ AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL")
 
 
 async def verify_token(authorization: str = Header(...)):
-
+    print("Checking token learning 1")
     if not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Invalid Authorization header format")
-
+    print("Checking token learning 2")
     response = requests.get(f"{AUTH_SERVICE_URL}/auth/verify_token", headers={"Authorization": authorization})
-
+    print("Checking token learning 3")
     if response.status_code != 200:
         raise HTTPException(status_code=401, detail="Invalid token")
-    
+    print("Checking token learning 4")
     return response.json()
 
 @router.post("/create_goal/", response_model=schemas.LearningGoalResponse)
