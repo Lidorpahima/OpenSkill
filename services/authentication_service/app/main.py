@@ -11,3 +11,6 @@ app.include_router(auth_router, prefix="/auth", tags=["Authentication"])
 async def root():
     return {"message": "Auth Service is Running"}
 
+@app.get("/health")
+async def health():
+    return {"status": "ok"}

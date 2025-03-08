@@ -27,4 +27,6 @@ app.include_router(ai_chat.router, prefix="/ai_chat", tags=["AI Chat"])
 async def root():
     return {"message": "Assessment Service is running"}
 
-
+@app.get("/health")
+async def health():
+    return {"status": "ok"}

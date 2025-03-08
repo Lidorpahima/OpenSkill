@@ -21,3 +21,6 @@ app.include_router(user_router, prefix="/users")
 async def read_root():
     return {"message": "USER SERVICE IS RUNNING!"}
 
+@app.get("/health")
+async def health():
+    return {"status": "ok"}

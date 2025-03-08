@@ -69,6 +69,29 @@ services:
       - app_network
     restart: always
 
+  gateway_service:
+    build:
+      context: ./services/gateway_service
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./services/gateway_service:/app
+    depends_on:
+      - user_service
+      - learning_service
+      - assessment_service
+      - auth_service
+    environment:
+      - USER_SERVICE_URL=${USER_SERVICE_URL}
+      - LEARNING_SERVICE_URL=${LEARNING_SERVICE_URL}
+      - ASSESSMENT_SERVICE_URL=${ASSESSMENT_SERVICE_URL}
+      - AUTH_SERVICE_URL=${AUTH_SERVICE_URL}
+      - GATEWAY_SERVICE_URL=${GATEWAY_SERVICE_URL}
+    env_file:
+      - .env
+    networks:
+      - app_network
+    restart: always
   db:
     image: postgres:latest
     environment:
@@ -82,7 +105,6 @@ services:
     networks:
       - app_network
     restart: always
-
   redis:
     image: redis:latest
     container_name: redis
