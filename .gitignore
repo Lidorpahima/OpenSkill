@@ -43,4 +43,3 @@ keys/
 certs/
 secrets.json
 redis.conf
-node_modules

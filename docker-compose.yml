@@ -114,18 +114,8 @@ services:
     networks:
       - app_network
     restart: always
-  frontend:
-    build:
-      context: ./services/frontend
-    ports:
-      - "3000:80"
-    volumes:
-      - ./services/frontend:/app
-      - /app/node_modules
-    environment:
-      - REACT_APP_API_URL=http://gateway_service:8080
-    depends_on:
-      - gateway_service
+  
+
 volumes:
   postgres_data:
 
