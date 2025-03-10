@@ -8,15 +8,14 @@ import os
 from fastapi import Header
 
 router = APIRouter()
-AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL")
-
+GATEWAY_SERVICE_URL = os.getenv("GATEWAY_SERVICE_URL")
 
 async def verify_token(authorization: str = Header(...)):
 
     if not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Invalid Authorization header format")
 
-    response = requests.get(f"{AUTH_SERVICE_URL}/auth/verify_token", headers={"Authorization": authorization})
+    response = requests.get(f"{GATEWAY_SERVICE_URL}/auth/verify_token", headers={"Authorization": authorization})
 
     if response.status_code != 200:
         raise HTTPException(status_code=401, detail="Invalid token")
@@ -103,30 +102,3 @@ async def search_goals(
     result = await db.execute(query)
     goals = result.scalars().all()  
     return goals
-
-
-
-
-
-
-
-
-
-'''
- UPDATE PROGRESS FOR A LEARNING GOAL PROGRESS 
-async def update_progress(goal_id: int, db: AsyncSession):
-    result = await db.execute(select(models.LearningGoal).filter(models.LearningGoal.id == goal_id))
-    goal = result.scalar_one_or_none()
-
-    if goal:
-        # כאן נחשב את אחוז ההתקדמות (לדוגמה, לפי מספר מבחנים שהושלמו)
-        # כרגע נשתמש בערך דמי (50%) כדוגמה
-        goal.progress = 50.0  
-        
-        # אם ההתקדמות 100%, נשנה את הסטטוס ל-COMPLETED
-        if goal.progress == 100.0:
-            goal.status = models.GoalStatus.COMPLETED
-
-        await db.commit()
-        await db.refresh(goal)
-'''

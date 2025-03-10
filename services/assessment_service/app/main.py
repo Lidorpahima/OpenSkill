@@ -18,9 +18,6 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-
-
-
 app.include_router(ai_chat.router, prefix="/ai_chat", tags=["AI Chat"])
 
 @app.get("/")

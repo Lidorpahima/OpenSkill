@@ -12,9 +12,6 @@ SECRET_KEY = os.getenv("SECRET_KEY", )
 ALGORITHM = os.getenv("ALGORITHM")
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
 
-if SECRET_KEY == "your-secret-key-for-development-only":
-    logger.warning("⚠️ Using development SECRET_KEY. Set proper SECRET_KEY in production!")
-
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def create_access_token(user_id: int):

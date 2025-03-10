@@ -13,26 +13,26 @@ import requests
 
 router = APIRouter()
 
-AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL")  
-LEARNING_SERVICE_URL = os.getenv("LEARNING_SERVICE_URL")
-USER_SERVICE_URL = os.getenv("USER_SERVICE_URL")
+
+GATEWAY_SERVICE_URL=os.getenv("GATEWAY_SERVICE_URL")
+
 MAX_HISTORY_MESSAGES = 5 
 
 system_message = (
     "You are an AI career assistant. Your goal is to help the user discover a suitable career path.\n"
-    "✅ Start by understanding their interests, skills, and preferences.\n"
-    "✅ Ask one **specific** and **personalized** question at a time.\n"
-    "✅ Keep responses **short and direct** (1-2 sentences max).\n"
-    "✅ If the user's answer is vague, ask for **clarification**.\n"
-    "✅ Focus on career-related topics such as:\n"
+    "Start by understanding their interests, skills, and preferences.\n"
+    "Ask one **specific** and **personalized** question at a time.\n"
+    "Keep responses **short and direct** (1-2 sentences max).\n"
+    "If the user's answer is vague, ask for **clarification**.\n"
+    "Focus on career-related topics such as:\n"
     "   - Personal strengths and skills.\n"
     "   - Subjects or activities they enjoy.\n"
     "   - Work environment preferences (office, remote, outdoors, etc.).\n"
     "   - Interests in technology, creativity, problem-solving, or leadership.\n"
     "\n"
-    "🚫 Do **not** ask multiple questions at once.\n"
-    "🚫 Do **not** give career recommendations until 5 questions have been answered.\n"
-    "🚫 Do **not** provide long explanations—keep it short and engaging.\n"
+    "Do **not** ask multiple questions at once.\n"
+    "Do **not** give career recommendations until 5 questions have been answered.\n"
+    "Do **not** provide long explanations—keep it short and engaging.\n"
     "\n"
     "Ask the next logical **follow-up question** based on the user’s previous answer."
 )
@@ -59,8 +59,8 @@ async def verify_token(authorization: str = Header(...)):
     if not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Invalid token format")
 
-    token = authorization.split("Bearer ")[1]  # חילוץ ה-Token האמיתי
-    response = requests.get(f"{AUTH_SERVICE_URL}/auth/verify_token", headers={"Authorization": authorization})
+    token = authorization.split("Bearer ")[1] 
+    response = requests.get(f"{GATEWAY_SERVICE_URL}/auth/verify_token", headers={"Authorization": authorization})
 
     if response.status_code != 200:
         raise HTTPException(status_code=401, detail="Invalid token")
@@ -190,7 +190,7 @@ async def select_career(career_data: CareerSelectRequest, user=Depends(verify_to
         raise HTTPException(status_code=400, detail="Invalid career choice.")
 
     response = requests.post(
-        f"{LEARNING_SERVICE_URL}/learning/create_goal/",
+        f"{GATEWAY_SERVICE_URL}/learning/create_goal/",
         json={"title": selected_career["title"], "description": selected_career["description"]},
         headers={"Authorization": f"Bearer {token}"}
     )
@@ -211,7 +211,7 @@ def save_recommendations_to_redis(user_id, recommended_careers):
   
 
 async def check_user_exists(user_id: int):
-    response = requests.get(f"{USER_SERVICE_URL}/users/{user_id}")
+    response = requests.get(f"{GATEWAY_SERVICE_URL}/users/{user_id}")
 
     if response.status_code == 404:
         raise HTTPException(status_code=404, detail="User does not exist")

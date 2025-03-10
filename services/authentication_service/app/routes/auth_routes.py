@@ -31,7 +31,7 @@ async def login(user_data: LoginRequest):
 
         user_info = response.json()
         logger.info(f"✅ Login successful for user ID: {user_info['user_id']}")
-
+        
         access_token = create_access_token(user_info["user_id"])
         
         return {"access_token": access_token, "token_type": "bearer"}
@@ -77,7 +77,7 @@ async def register_user(user: UserCreate):
         try:
             user_data = response.json()
             logger.info(f"✅ User registered successfully: {user_data}")
-
+            
             if "id" not in user_data or "username" not in user_data or "email" not in user_data:
                 logger.error(f"❌ Missing required fields in response: {user_data}")
                 raise HTTPException(status_code=500, detail=user_data["detail"])
@@ -87,6 +87,7 @@ async def register_user(user: UserCreate):
                 username=user_data["username"],
                 email=user_data["email"]
             )
+            
         except json.JSONDecodeError:
             logger.error(f"❌ Could not parse response as JSON: {response.text}")
             raise HTTPException(status_code=500, detail=user_data["detail"])

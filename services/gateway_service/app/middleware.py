@@ -1,9 +1,9 @@
-# gateway_service/app/middleware.py
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from fastapi import HTTPException
 import httpx
 import os
+import traceback  
 
 AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL")  
 
@@ -35,12 +35,17 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
         try:
             async with httpx.AsyncClient() as client:
-                print(f"🔄 Verifying token with auth service: {AUTH_SERVICE_URL}/auth/verify_token")
+                verify_url = f"{AUTH_SERVICE_URL}/verify_token"
+                print(f"🔄 Verifying token with auth service: {verify_url}")
+                
                 response = await client.get(
-                    f"{AUTH_SERVICE_URL}/auth/verify_token", 
+                    verify_url,
                     headers={"Authorization": auth_header},
                     timeout=10.0 
                 )
+                
+                print(f"🔄 Auth response status: {response.status_code}")
+                print(f"🔄 Auth response body: {response.text}")
                 
                 if response.status_code != 200:
                     print(f"❌ Invalid token: {response.status_code} - {response.text}")
@@ -50,6 +55,11 @@ class AuthMiddleware(BaseHTTPMiddleware):
         
         except httpx.RequestError as exc:
             print(f"❌ Error connecting to auth service: {str(exc)}")
+            print(f"❌ Error traceback: {traceback.format_exc()}")
             raise HTTPException(status_code=503, detail="Authentication service unavailable")
+        except Exception as e:
+            print(f"❌ Unexpected error during authentication: {str(e)}")
+            print(f"❌ Error traceback: {traceback.format_exc()}")
+            raise HTTPException(status_code=500, detail=f"Authentication error: {str(e)}")
 
         return await call_next(request)
