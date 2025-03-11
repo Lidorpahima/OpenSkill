@@ -1,95 +1,96 @@
-// יצירת דפי האפליקציה
 const routes = {
     "login": `
         <div class="container">
-            <h1>ברוך הבא ל-UPSKILL</h1>
+            <h1>Welcome to UPSKILL</h1>
             <form id="loginForm">
-                <input type="email" id="email" placeholder="אימייל" required>
-                <input type="password" id="password" placeholder="סיסמה" required>
-                <button type="submit">התחבר</button>
+                <input type="email" id="email" placeholder="Email" required>
+                <input type="password" id="password" placeholder="Password" required>
+                <button type="submit">Login</button>
             </form>
-            <p>עדיין אין לך חשבון? <a href="#" id="goToRegister">הירשם עכשיו</a></p>
+            <p>Don't have an account? <a href="#" id="goToRegister">Register now</a></p>
             <p id="errorMessage" class="error-message"></p>
         </div>
     `,
     "register": `
         <div class="container">
-            <h1>הרשמה למערכת</h1>
+            <h1>Register to UPSKILL</h1>
             <form id="registerForm">
-                <input type="text" id="username" placeholder="שם משתמש" required>
-                <input type="email" id="email" placeholder="אימייל" required>
-                <input type="password" id="password" placeholder="סיסמה" required>
-                <button type="submit">הירשם</button>
+                <input type="text" id="username" placeholder="Username" required>
+                <input type="email" id="email" placeholder="Email" required>
+                <input type="password" id="password" placeholder="Password" required>
+                <button type="submit">Register</button>
             </form>
-            <p>כבר יש לך חשבון? <a href="#" id="goToLogin">התחבר כאן</a></p>
+            <p>Already have an account? <a href="#" id="goToLogin">Login here</a></p>
             <p id="errorMessage" class="error-message"></p>
         </div>
     `,
     "dashboard": `
         <div class="container dashboard">
-            <h1>ברוך הבא, <span id="username"></span>!</h1>
+            <h1>Welcome, <span id="username"></span>!</h1>
             <div class="dashboard-menu">
-                <button id="btnGoals">מטרות למידה</button>
-                <button id="btnChat">צ'אט AI</button>
-                <button id="btnCareer">מסלול קריירה</button>
-                <button id="logout" class="logout-btn">התנתק</button>
+                <button id="btnGoals">Learning Goals</button>
+                <button id="btnChat">AI Chat</button>
+                <button id="btnCareer">Career Path</button>
             </div>
             <div id="dashboardContent"></div>
         </div>
     `,
     "goals": `
         <div class="goals-container">
-            <h2>מטרות הלמידה שלי</h2>
+            <h2>My Learning Goals</h2>
             <div id="goalsList"></div>
-            <button id="addGoalBtn">הוסף מטרה חדשה</button>
+            <button id="addGoalBtn">Add New Goal</button>
             <div id="addGoalForm" class="hidden">
-                <input type="text" id="goalTitle" placeholder="כותרת המטרה">
-                <textarea id="goalDescription" placeholder="תיאור המטרה"></textarea>
-                <button id="saveGoalBtn">שמור</button>
-                <button id="cancelGoalBtn">בטל</button>
+                <input type="text" id="goalTitle" placeholder="Goal Title">
+                <textarea id="goalDescription" placeholder="Goal Description"></textarea>
+                <button id="saveGoalBtn">Save</button>
+                <button id="cancelGoalBtn">Cancel</button>
             </div>
         </div>
     `,
     "chat": `
         <div class="chat-container">
-            <h2>צ'אט עם AI</h2>
+            <h2>AI Chat</h2>
             <div id="chatHistory" class="chat-history"></div>
             <div class="chat-input">
-                <input type="text" id="chatMessage" placeholder="הקלד את השאלה שלך...">
-                <button id="sendChatBtn">שלח</button>
+                <input type="text" id="chatMessage" placeholder="What career path are you considering? Share your thoughts...">
+                <button id="sendChatBtn">Send</button>
             </div>
             <div id="careerRecommendations" class="hidden">
-                <h3>המלצות קריירה</h3>
+                <h3>Career Recommendations</h3>
                 <div id="recommendationsList"></div>
             </div>
         </div>
     `,
     "career": `
         <div class="career-container">
-            <h2>המסלול המקצועי שלי</h2>
+            <h2>My Career Path</h2>
             <div id="careerPath"></div>
         </div>
     `
 };
 
-// פונקציה לניווט בין דפים
 function navigate(page) {
     const app = document.getElementById("app");
-    app.classList.add("hidden"); // אנימציה למעבר דף
+    app.classList.add("fade-out");
     setTimeout(() => {
-        app.innerHTML = routes[page]; // טוען את הדף החדש
-        app.classList.remove("hidden"); 
-
+        app.innerHTML = routes[page];
+        app.classList.remove("fade-out");
+        app.classList.add("fade-in");
+        
         if (page === "login") setupLogin();
         if (page === "register") setupRegister();
         if (page === "dashboard") setupDashboard();
         if (page === "goals") setupGoals();
         if (page === "chat") setupChat();
         if (page === "career") setupCareer();
+        
+        // Update logout button visibility
+        const logoutBtn = document.getElementById("logoutBtn");
+        logoutBtn.classList.toggle("hidden", page === "login" || page === "register");
     }, 300);
 }
 
-// פונקציה לניהול התחברות
 function setupLogin() {
     document.getElementById("loginForm").addEventListener("submit", async function(event) {
         event.preventDefault();
@@ -103,15 +104,14 @@ function setupLogin() {
         try {
             const result = await login(email, password);
             if (result.success) {
-                // שמור מידע משתמש ב-sessionStorage
                 sessionStorage.setItem("user", JSON.stringify(result.user));
                 sessionStorage.setItem("token", result.token);
                 navigate("dashboard");
             } else {
-                errorMessage.textContent = result.message || "שם משתמש או סיסמה שגויים";
+                errorMessage.textContent = result.message || "Invalid credentials";
             }
         } catch (error) {
-            errorMessage.textContent = "שגיאה בהתחברות: " + error.message;
+            errorMessage.textContent = "Login error: " + error.message;
         }
     });
     
@@ -121,7 +121,6 @@ function setupLogin() {
     });
 }
 
-// פונקציה לניהול הרשמה
 function setupRegister() {
     document.getElementById("registerForm").addEventListener("submit", async function(event) {
         event.preventDefault();
@@ -137,12 +136,12 @@ function setupRegister() {
             const result = await register(username, email, password);
             if (result.success) {
                 navigate("login");
-                alert("הרשמה בוצעה בהצלחה! אנא התחבר עם האימייל והסיסמה שלך.");
+                showPopup("Registration successful! Please login.");
             } else {
-                errorMessage.textContent = result.message || "שגיאה ברישום המשתמש";
+                errorMessage.textContent = result.message || "Registration failed";
             }
         } catch (error) {
-            errorMessage.textContent = "שגיאה ברישום: " + error.message;
+            errorMessage.textContent = "Registration error: " + error.message;
         }
     });
     
@@ -152,7 +151,6 @@ function setupRegister() {
     });
 }
 
-// פונקציה לניהול הדשבורד
 function setupDashboard() {
     const user = JSON.parse(sessionStorage.getItem("user"));
     if (!user) {
@@ -162,7 +160,6 @@ function setupDashboard() {
     
     document.getElementById("username").textContent = user.username;
     
-    // תפריט ניווט בדשבורד
     document.getElementById("btnGoals").addEventListener("click", () => {
         document.getElementById("dashboardContent").innerHTML = routes["goals"];
         setupGoals();
@@ -178,35 +175,33 @@ function setupDashboard() {
         setupCareer();
     });
     
-    document.getElementById("logout").addEventListener("click", () => {
+    document.getElementById("logoutBtn").addEventListener("click", () => {
         logout();
         sessionStorage.removeItem("user");
         sessionStorage.removeItem("token");
         navigate("login");
     });
     
-    // טען את דף המטרות כברירת מחדל
     document.getElementById("dashboardContent").innerHTML = routes["goals"];
     setupGoals();
 }
 
-// פונקציה לניהול מטרות למידה
 async function setupGoals() {
     try {
         const goals = await getLearningGoals();
         const goalsList = document.getElementById("goalsList");
         
         if (goals.length === 0) {
-            goalsList.innerHTML = "<p>אין לך עדיין מטרות למידה. הוסף את המטרה הראשונה שלך!</p>";
+            goalsList.innerHTML = "<p>You don't have any learning goals yet. Add your first goal!</p>";
         } else {
             goalsList.innerHTML = goals.map(goal => `
-                <div class="goal-item">
+                <div class="goal-item fade-in">
                     <h3>${goal.title}</h3>
                     <p>${goal.description}</p>
                     <div class="goal-progress">
                         <div class="progress-bar" style="width: ${goal.progress}%"></div>
                     </div>
-                    <p>התקדמות: ${goal.progress}%</p>
+                    <p>Progress: ${goal.progress}%</p>
                 </div>
             `).join("");
         }
@@ -220,16 +215,16 @@ async function setupGoals() {
             const description = document.getElementById("goalDescription").value;
             
             if (!title || !description) {
-                alert("נא למלא את כל השדות");
+                showPopup("Please fill all fields");
                 return;
             }
             
             try {
                 await createLearningGoal(title, description);
                 document.getElementById("addGoalForm").classList.add("hidden");
-                setupGoals(); // רענן את רשימת המטרות
+                setupGoals();
             } catch (error) {
-                alert("שגיאה ביצירת מטרה: " + error.message);
+                showPopup("Error creating goal: " + error.message);
             }
         });
         
@@ -238,12 +233,11 @@ async function setupGoals() {
         });
         
     } catch (error) {
-        console.error("שגיאה בטעינת מטרות:", error);
-        document.getElementById("goalsList").innerHTML = "<p>שגיאה בטעינת מטרות הלמידה</p>";
+        console.error("Error loading goals:", error);
+        document.getElementById("goalsList").innerHTML = "<p>Error loading learning goals</p>";
     }
 }
 
-// פונקציה לניהול צ'אט AI
 function setupChat() {
     const chatHistory = document.getElementById("chatHistory");
     const chatInput = document.getElementById("chatMessage");
@@ -252,44 +246,33 @@ function setupChat() {
     const user = JSON.parse(sessionStorage.getItem("user"));
     const userId = user ? user.id || 'anonymous' : 'anonymous';
     
-    // טען היסטוריית צ'אט מאחסון מקומי אם קיימת
     const storedHistory = localStorage.getItem(`chatHistory_${userId}`);
     if (storedHistory) {
         chatHistory.innerHTML = storedHistory;
-    } else {
-        chatHistory.innerHTML = ''; 
     }
-    
     
     sendButton.addEventListener("click", async () => {
         const message = chatInput.value.trim();
         if (!message) return;
         
-        // הוסף הודעת המשתמש לצ'אט
-        chatHistory.innerHTML += `<div class="user-message">משתמש: ${message}</div>`;
+        chatHistory.innerHTML += `<div class="user-message fade-in">User: ${message}</div>`;
         chatInput.value = "";
         
         try {
             const response = await sendChatMessage(message);
-
-            chatHistory.innerHTML += `<div class="ai-message">AI: ${response.response}</div>`;
-
-            localStorage.setItem("chatHistory", chatHistory.innerHTML);
+            chatHistory.innerHTML += `<div class="ai-message fade-in">AI: ${response.response}</div>`;
+            localStorage.setItem(`chatHistory_${userId}`, chatHistory.innerHTML);
 
             if (response.recommendation && response.recommendation.length > 0) {
                 const recommendationsDiv = document.getElementById("careerRecommendations");
                 const recommendationsList = document.getElementById("recommendationsList");
                 
                 recommendationsDiv.classList.remove("hidden");
-                
-                const chatContainer = document.querySelector(".chat-container");
-                chatContainer.style.height = "auto";
-
                 recommendationsList.innerHTML = response.recommendation.map((career, index) => `
-                    <div class="career-recommendation">
-                        <h4>${career.title} (${career.match_percentage}% התאמה)</h4>
+                    <div class="career-recommendation fade-in">
+                        <h4>${career.title} (${career.match_percentage}% Match)</h4>
                         <p>${career.description}</p>
-                        <button class="select-career-btn" data-id="${index + 1}">בחר קריירה זו</button>
+                        <button class="select-career-btn" data-id="${index + 1}">Select This Career</button>
                     </div>
                 `).join("");
                 
@@ -298,25 +281,22 @@ function setupChat() {
                         const careerId = button.getAttribute("data-id");
                         try {
                             const result = await selectCareer(parseInt(careerId));
-                            alert(result.message || "הקריירה נבחרה בהצלחה!");
-                            // מעבר למטרות למידה במקום למסלול קריירה
+                            showPopup(result.message || "Career selected successfully!");
                             document.getElementById("btnGoals").click();
                         } catch (error) {
-                            alert("שגיאה בבחירת קריירה: " + error.message);
+                            showPopup("Error selecting career: " + error.message);
                         }
                     });
                 });
             }
             
         } catch (error) {
-            chatHistory.innerHTML += `<div class="error-message">שגיאה: ${error.message}</div>`;
+            chatHistory.innerHTML += `<div class="error-message fade-in">Error: ${error.message}</div>`;
         }
         
-        // גלול לתחתית הצ'אט
         chatHistory.scrollTop = chatHistory.scrollHeight;
     });
     
-    // אפשר לשלוח הודעה באמצעות Enter
     chatInput.addEventListener("keypress", (event) => {
         if (event.key === "Enter") {
             sendButton.click();
@@ -324,39 +304,37 @@ function setupChat() {
     });
 }
 
-// פונקציה לניהול דף קריירה
 async function setupCareer() {
     const careerPathDiv = document.getElementById("careerPath");
     
     try {
-        // נסה לקבל המלצות קריירה
         const recommendations = await getCareerRecommendations();
         
         if (recommendations && recommendations.length > 0) {
-            const selectedCareer = recommendations[0]; // לשם הדוגמה, נשתמש בקריירה הראשונה
+            const selectedCareer = recommendations[0];
             
             careerPathDiv.innerHTML = `
-                <div class="selected-career">
-                    <h3>המסלול שבחרת: ${selectedCareer.title}</h3>
+                <div class="selected-career fade-in">
+                    <h3>Your Chosen Path: ${selectedCareer.title}</h3>
                     <p>${selectedCareer.description}</p>
-                    <div class="match-percentage">התאמה: ${selectedCareer.match_percentage}%</div>
+                    <div class="match-percentage">Match: ${selectedCareer.match_percentage}%</div>
                 </div>
-                <div class="learning-path">
-                    <h3>מסלול הלמידה המומלץ:</h3>
+                <div class="learning-path fade-in">
+                    <h3>Recommended Learning Path:</h3>
                     <ol>
-                        <li>למד יסודות ${selectedCareer.title}</li>
-                        <li>השלם קורסים בסיסיים</li>
-                        <li>צבור ניסיון בפרויקטים</li>
-                        <li>פתח תיק עבודות</li>
-                        <li>התכונן לראיונות עבודה</li>
+                        <li>Learn ${selectedCareer.title} fundamentals</li>
+                        <li>Complete basic courses</li>
+                        <li>Gain project experience</li>
+                        <li>Build a portfolio</li>
+                        <li>Prepare for job interviews</li>
                     </ol>
                 </div>
             `;
         } else {
             careerPathDiv.innerHTML = `
-                <p>עדיין לא בחרת מסלול קריירה.</p>
-                <p>גש לצ'אט ה-AI כדי לקבל המלצות קריירה!</p>
-                <button id="goToChatBtn" class="action-btn">למעבר לצ'אט</button>
+                <p>You haven't chosen a career path yet.</p>
+                <p>Visit the AI Chat for career recommendations!</p>
+                <button id="goToChatBtn" class="action-btn">Go to Chat</button>
             `;
             
             document.getElementById("goToChatBtn").addEventListener("click", () => {
@@ -364,26 +342,33 @@ async function setupCareer() {
             });
         }
     } catch (error) {
-        console.error("שגיאה בטעינת נתיב קריירה:", error);
-        careerPathDiv.innerHTML = "<p>שגיאה בטעינת נתיב הקריירה שלך</p>";
+        console.error("Error loading career path:", error);
+        careerPathDiv.innerHTML = "<p>No career path found</p>";
     }
 }
 
-// הפעלת המערכת - טעינת מסך מתאים
+// Initial page load
 navigate(sessionStorage.getItem("token") ? "dashboard" : "login");
 
 function showPopup(message) {
     const popup = document.createElement("div");
-    popup.classList.add("popup");
+    popup.classList.add("popup", "fade-in");
     popup.innerHTML = `
         <div class="popup-content">
             <p>${message}</p>
-            <button id="popupClose">אישור</button>
+            <button id="popupClose">OK</button>
         </div>
     `;
     document.body.appendChild(popup);
 
     document.getElementById("popupClose").addEventListener("click", () => {
-        popup.remove();
+        popup.classList.remove("fade-in");
+        popup.classList.add("fade-out");
+        setTimeout(() => popup.remove(), 300);
     });
 }
+
+// Error boundary handler
+window.addEventListener("error", (event) => {
+    showPopup("An unexpected error occurred: " + event.message);
+});

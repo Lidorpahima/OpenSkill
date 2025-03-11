@@ -1,7 +1,7 @@
 :root {
-    --primary-color: #4361ee;
+    --primary-color: #3459ff;
     --primary-hover: #3a56d4;
-    --secondary-color: #3f37c9;
+    --secondary-color: #4361ee;
     --success-color: #4cc9f0;
     --danger-color: #f72585;
     --warning-color: #f8961e;
@@ -22,8 +22,11 @@
     --radius-sm: 0.25rem;
     --radius-md: 0.5rem;
     --radius-lg: 0.75rem;
+    --gradient-primary: linear-gradient(135deg, #4361ee, #4cc9f0);
     --transition: all 0.3s ease;
     --font-main: 'Segoe UI', 'Rubik', sans-serif;
+    --transition: all 0.3s ease;
+    --font-main: 'Poppins', sans-serif;
   }
   
   * {
@@ -31,16 +34,42 @@
     padding: 0;
     box-sizing: border-box;
   }
-  
-  body {
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
     font-family: var(--font-main);
-    background-color: #f0f4f8;
-    color: var(--gray-800);
+    background: linear-gradient(135deg, #f0f4f8, #e9ecef);
+    color: var(--dark-color);
     line-height: 1.6;
-    direction: rtl;
     min-height: 100vh;
-    padding-bottom: 2rem;
-  }
+}
+
+.main-header {
+    position: sticky;
+    top: 0;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: var(--shadow-sm);
+    z-index: 1000;
+}
+
+.logo {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
   
   .container {
     max-width: 1000px;
@@ -102,7 +131,6 @@
     text-decoration: underline;
   }
   
-  /* פורמים וקלט */
   input, textarea, select {
     width: 100%;
     padding: 0.8rem 1rem;
@@ -120,7 +148,6 @@
     box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
   }
   
-  /* כפתורים */
   button {
     background-color: var(--primary-color);
     color: white;
@@ -194,17 +221,33 @@
     border-radius: var(--radius-sm);
   }
   
-  /* אנימציות ומעברים */
   .fade-in {
     animation: fadeIn 0.5s ease-in;
-  }
-  
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
+}
+
+.fade-out {
+    animation: fadeOut 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
-  }
-  
-  /* דשבורד */
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(-20px); }
+}
+
+.spinner {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2rem;
+    color: var(--primary-color);
+    z-index: 2000;
+}
   .dashboard {
     text-align: center;
   }
@@ -237,7 +280,6 @@
     transform: translateY(-5px);
   }
   
-  /* מטרות למידה */
   .goals-container {
     padding: 1rem;
   }
@@ -290,7 +332,6 @@
     transition: var(--transition);
   }
   
-  /* צ'אט */
   .chat-container {
     min-height: 600px;
     height: auto;
@@ -409,7 +450,6 @@
     font-size: 0.8rem;
   }
   
-  /* מסלול קריירה */
   .career-container {
     padding: 1rem;
   }
@@ -456,7 +496,6 @@
     border-bottom: none;
   }
   
-  /* תגובתיות */
   @media (max-width: 768px) {
     .container {
       width: 100%;

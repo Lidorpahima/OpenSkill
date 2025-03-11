@@ -11,7 +11,7 @@ async function login(email, password) {
         if (!response.ok) {
             await checkTokenExpiration(response);
             const errorData = await response.json();
-            throw new Error(errorData.detail || "שגיאה בהתחברות");
+            throw new Error(errorData.detail || "Login failed");
         }
         
         const data = await response.json();
@@ -24,7 +24,7 @@ async function login(email, password) {
             token: data.access_token
         };
     } catch (error) {
-        console.error("שגיאת התחברות:", error);
+        console.error("Login error:", error);
         return { success: false, message: error.message };
     }
 }
@@ -40,12 +40,12 @@ async function register(username, email, password) {
         if (!response.ok) {
             await checkTokenExpiration(response);
             const errorData = await response.json();
-            throw new Error(errorData.detail || "שגיאה ברישום משתמש");
+            throw new Error(errorData.detail || "Registration failed");
         }
         
         return { success: true, data: await response.json() };
     } catch (error) {
-        console.error("שגיאת רישום:", error);
+        console.error("Registration error:", error);
         return { success: false, message: error.message };
     }
 }
@@ -53,19 +53,20 @@ async function register(username, email, password) {
 async function getUserInfo(token) {
     try {
         return {
-            username: "משתמש",
+            username: "User",
             email: "user@example.com"
         };
     } catch (error) {
-        console.error("שגיאה בקבלת מידע על המשתמש:", error);
+        console.error("Error fetching user info:", error);
         throw error;
     }
 }
 
 async function apiRequest(url, options = {}) {
+    showLoadingSpinner();
     try {
         const token = localStorage.getItem("token");
-        if (!token) throw new Error("נדרשת התחברות");
+        if (!token) throw new Error("Authentication required");
         
         options.headers = {
             ...options.headers,
@@ -73,23 +74,17 @@ async function apiRequest(url, options = {}) {
             "Authorization": `Bearer ${token}`
         };
 
-        console.log("🚀 Sending API request:");
-        console.log("🔗 URL:", `${API_BASE_URL}${url}`);
-        console.log("📑 Headers:", options.headers);
-
         const response = await fetch(`${API_BASE_URL}${url}`, options);
         const tokenValid = await checkTokenExpiration(response);
         
-        // אם הטוקן התחדש, ננסה שוב את הבקשה
         if (response.status === 401 && tokenValid) {
-            // הטוקן חודש, ננסה שוב את הבקשה
             const newToken = localStorage.getItem("token");
             options.headers["Authorization"] = `Bearer ${newToken}`;
             const newResponse = await fetch(`${API_BASE_URL}${url}`, options);
             
             if (!newResponse.ok) {
                 const errorData = await newResponse.json();
-                throw new Error(errorData.detail || "שגיאה בבקשה לשרת");
+                throw new Error(errorData.detail || "Server request failed");
             }
             
             return await newResponse.json();
@@ -97,16 +92,17 @@ async function apiRequest(url, options = {}) {
 
         if (!response.ok) {
             const errorData = await response.json();
-            throw new Error(errorData.detail || "שגיאה בבקשה לשרת");
+            throw new Error(errorData.detail || "Server request failed");
         }
 
         return await response.json();
     } catch (error) {
-        console.error("שגיאה בבקשה לשרת:", error);
+        console.error("API request error:", error);
         throw error;
+    } finally {
+        hideLoadingSpinner();
     }
 }
-
 
 async function getLearningGoals() {
     return await apiRequest("/learning/goals/");
@@ -120,9 +116,6 @@ async function createLearningGoal(title, description) {
 }
 
 async function sendChatMessage(message) {
-    console.log("Sending message:", message); 
-    console.log("Token:", localStorage.getItem("token"));  
-    
     return await apiRequest("/ai_chat/chat/", {
         method: "POST",
         body: JSON.stringify({ message }) 
@@ -145,38 +138,26 @@ function logout() {
     const userId = user ? user.id || 'anonymous' : 'anonymous';
 
     localStorage.removeItem(`chatHistory_${userId}`);
-
     localStorage.removeItem("token");
     sessionStorage.removeItem("user");
     
     return { success: true };
 }
-async function checkTokenExpiration(response) {
-    if (response.status === 401) {
-        showPopup("ההתחברות שלך פגה תוקף. יש להתחבר מחדש.");
-        localStorage.removeItem("token");
-        sessionStorage.removeItem("user");
-        
-        setTimeout(() => {
-            navigate("login");
-        }, 2000);
-    }
-}
+
 async function checkTokenExpiration(response) {
     if (response?.status === 401) {
-        const shouldRefresh = await showConfirmPopup("פג תוקף ההתחברות שלך. האם ברצונך להישאר מחובר?");
+        const shouldRefresh = await showConfirmPopup("Your session has expired. Would you like to stay logged in?");
         
         if (shouldRefresh) {
             const refreshResult = await refreshToken();
             if (refreshResult.success) {
-                showPopup("התחברות חודשה בהצלחה!");
-                return true; // הטוקן חודש בהצלחה
+                showPopup("Session renewed successfully!");
+                return true;
             } else {
-                showPopup(refreshResult.message || "לא הצלחנו לחדש את ההתחברות");
+                showPopup(refreshResult.message || "Failed to renew session");
             }
         }
         
-        // לא ניתן לרענן, או שהמשתמש סירב, או שהריענון נכשל
         localStorage.removeItem("token");
         sessionStorage.removeItem("user");
         
@@ -186,8 +167,14 @@ async function checkTokenExpiration(response) {
         
         return false;
     }
-    return true; // אין בעיה עם הטוקן
+    return true;
 }
+
+async function refreshToken() {
+    // Placeholder for token refresh logic
+    return { success: false, message: "Token refresh not implemented" };
+}
+
 function showConfirmPopup(message) {
     return new Promise((resolve) => {
         const popup = document.createElement("div");
@@ -196,8 +183,8 @@ function showConfirmPopup(message) {
             <div class="popup-content">
                 <p>${message}</p>
                 <div class="popup-buttons">
-                    <button id="popupConfirm">כן</button>
-                    <button id="popupCancel">לא</button>
+                    <button id="popupConfirm">Yes</button>
+                    <button id="popupCancel">No</button>
                 </div>
             </div>
         `;
@@ -213,4 +200,18 @@ function showConfirmPopup(message) {
             resolve(false);
         });
     });
+}
+
+function showLoadingSpinner() {
+    const container = document.getElementById("notification-container");
+    container.innerHTML = `
+        <div class="spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+        </div>
+    `;
+}
+
+function hideLoadingSpinner() {
+    const container = document.getElementById("notification-container");
+    container.innerHTML = "";
 }
