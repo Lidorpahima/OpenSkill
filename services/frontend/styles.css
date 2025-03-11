@@ -352,14 +352,16 @@
     bottom: 0.3rem;
     left: 1rem;
   }
-  
-  /* המלצות קריירה */
+
   #careerRecommendations {
     margin-top: 2rem;
     padding: 1.5rem;
     background-color: white;
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-md);
+        .container {
+            height: 600px;
+        }
   }
   
   .career-recommendation {

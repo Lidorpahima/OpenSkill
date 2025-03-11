@@ -15,7 +15,10 @@ class AuthMiddleware(BaseHTTPMiddleware):
             "/openapi.json", 
             "/redoc"
         ]
-
+        if request.method == "OPTIONS":
+            print(f"✅ Allowing OPTIONS request for path: {request.url.path}")
+            return await call_next(request)
+    
         path = request.url.path
         print(f"🔍 Processing request path: {path}")
         

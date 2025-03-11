@@ -248,12 +248,18 @@ function setupChat() {
     const chatHistory = document.getElementById("chatHistory");
     const chatInput = document.getElementById("chatMessage");
     const sendButton = document.getElementById("sendChatBtn");
+
+    const user = JSON.parse(sessionStorage.getItem("user"));
+    const userId = user ? user.id || 'anonymous' : 'anonymous';
     
     // טען היסטוריית צ'אט מאחסון מקומי אם קיימת
-    const storedHistory = localStorage.getItem("chatHistory");
+    const storedHistory = localStorage.getItem(`chatHistory_${userId}`);
     if (storedHistory) {
         chatHistory.innerHTML = storedHistory;
+    } else {
+        chatHistory.innerHTML = ''; 
     }
+    
     
     sendButton.addEventListener("click", async () => {
         const message = chatInput.value.trim();
@@ -278,6 +284,7 @@ function setupChat() {
                 const recommendationsList = document.getElementById("recommendationsList");
                 
                 recommendationsDiv.classList.remove("hidden");
+                
                 recommendationsList.innerHTML = response.recommendation.map((career, index) => `
                     <div class="career-recommendation">
                         <h4>${career.title} (${career.match_percentage}% התאמה)</h4>
@@ -286,14 +293,14 @@ function setupChat() {
                     </div>
                 `).join("");
                 
-                // הוסף אירועי לחיצה על כפתורי בחירת קריירה
                 document.querySelectorAll(".select-career-btn").forEach(button => {
                     button.addEventListener("click", async () => {
                         const careerId = button.getAttribute("data-id");
                         try {
                             const result = await selectCareer(parseInt(careerId));
                             alert(result.message || "הקריירה נבחרה בהצלחה!");
-                            navigate("career");
+                            // מעבר למטרות למידה במקום למסלול קריירה
+                            document.getElementById("btnGoals").click();
                         } catch (error) {
                             alert("שגיאה בבחירת קריירה: " + error.message);
                         }

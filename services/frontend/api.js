@@ -105,9 +105,12 @@ async function createLearningGoal(title, description) {
 }
 
 async function sendChatMessage(message) {
+    console.log("Sending message:", message); 
+    console.log("Token:", localStorage.getItem("token"));  
+    
     return await apiRequest("/ai_chat/chat/", {
         method: "POST",
-        body: JSON.stringify({ message })
+        body: JSON.stringify({ message }) 
     });
 }
 
@@ -123,10 +126,16 @@ async function selectCareer(careerId) {
 }
 
 function logout() {
+    const user = JSON.parse(sessionStorage.getItem("user"));
+    const userId = user ? user.id || 'anonymous' : 'anonymous';
+
+    localStorage.removeItem(`chatHistory_${userId}`);
+
     localStorage.removeItem("token");
+    sessionStorage.removeItem("user");
+    
     return { success: true };
 }
-
 async function checkTokenExpiration(response) {
     if (response.status === 401) {
         showPopup("ההתחברות שלך פגה תוקף. יש להתחבר מחדש.");
