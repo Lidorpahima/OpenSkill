@@ -292,14 +292,15 @@
   
   /* צ'אט */
   .chat-container {
-    height: 600px;
+    min-height: 600px;
+    height: auto;
     display: flex;
     flex-direction: column;
     gap: 1rem;
   }
   
   .chat-history {
-    flex: 1;
+    height: 400px;
     overflow-y: auto;
     border: 1px solid var(--gray-300);
     padding: 1rem;

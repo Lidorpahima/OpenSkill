@@ -16,7 +16,7 @@ async function login(email, password) {
         
         const data = await response.json();
         localStorage.setItem("token", data.access_token);
-        
+        localStorage.setItem("tokenExpiry", new Date(Date.now() + 30 * 60 * 1000).toString());
         const userInfo = await getUserInfo(data.access_token);
         return { 
             success: true, 
@@ -78,7 +78,22 @@ async function apiRequest(url, options = {}) {
         console.log("📑 Headers:", options.headers);
 
         const response = await fetch(`${API_BASE_URL}${url}`, options);
-        await checkTokenExpiration(response);
+        const tokenValid = await checkTokenExpiration(response);
+        
+        // אם הטוקן התחדש, ננסה שוב את הבקשה
+        if (response.status === 401 && tokenValid) {
+            // הטוקן חודש, ננסה שוב את הבקשה
+            const newToken = localStorage.getItem("token");
+            options.headers["Authorization"] = `Bearer ${newToken}`;
+            const newResponse = await fetch(`${API_BASE_URL}${url}`, options);
+            
+            if (!newResponse.ok) {
+                const errorData = await newResponse.json();
+                throw new Error(errorData.detail || "שגיאה בבקשה לשרת");
+            }
+            
+            return await newResponse.json();
+        }
 
         if (!response.ok) {
             const errorData = await response.json();
@@ -146,4 +161,56 @@ async function checkTokenExpiration(response) {
             navigate("login");
         }, 2000);
     }
+}
+async function checkTokenExpiration(response) {
+    if (response?.status === 401) {
+        const shouldRefresh = await showConfirmPopup("פג תוקף ההתחברות שלך. האם ברצונך להישאר מחובר?");
+        
+        if (shouldRefresh) {
+            const refreshResult = await refreshToken();
+            if (refreshResult.success) {
+                showPopup("התחברות חודשה בהצלחה!");
+                return true; // הטוקן חודש בהצלחה
+            } else {
+                showPopup(refreshResult.message || "לא הצלחנו לחדש את ההתחברות");
+            }
+        }
+        
+        // לא ניתן לרענן, או שהמשתמש סירב, או שהריענון נכשל
+        localStorage.removeItem("token");
+        sessionStorage.removeItem("user");
+        
+        setTimeout(() => {
+            navigate("login");
+        }, 2000);
+        
+        return false;
+    }
+    return true; // אין בעיה עם הטוקן
+}
+function showConfirmPopup(message) {
+    return new Promise((resolve) => {
+        const popup = document.createElement("div");
+        popup.classList.add("popup");
+        popup.innerHTML = `
+            <div class="popup-content">
+                <p>${message}</p>
+                <div class="popup-buttons">
+                    <button id="popupConfirm">כן</button>
+                    <button id="popupCancel">לא</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(popup);
+
+        document.getElementById("popupConfirm").addEventListener("click", () => {
+            popup.remove();
+            resolve(true);
+        });
+
+        document.getElementById("popupCancel").addEventListener("click", () => {
+            popup.remove();
+            resolve(false);
+        });
+    });
 }

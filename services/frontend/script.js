@@ -271,20 +271,20 @@ function setupChat() {
         
         try {
             const response = await sendChatMessage(message);
-            
-            // הוסף תגובת AI לצ'אט
+
             chatHistory.innerHTML += `<div class="ai-message">AI: ${response.response}</div>`;
-            
-            // שמור היסטוריית צ'אט באחסון מקומי
+
             localStorage.setItem("chatHistory", chatHistory.innerHTML);
-            
-            // בדוק אם יש המלצות קריירה
+
             if (response.recommendation && response.recommendation.length > 0) {
                 const recommendationsDiv = document.getElementById("careerRecommendations");
                 const recommendationsList = document.getElementById("recommendationsList");
                 
                 recommendationsDiv.classList.remove("hidden");
                 
+                const chatContainer = document.querySelector(".chat-container");
+                chatContainer.style.height = "auto";
+
                 recommendationsList.innerHTML = response.recommendation.map((career, index) => `
                     <div class="career-recommendation">
                         <h4>${career.title} (${career.match_percentage}% התאמה)</h4>
