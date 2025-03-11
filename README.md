@@ -2,7 +2,7 @@
 
 UPSKILL is an AI-powered personalized learning platform designed to help users achieve their learning goals efficiently and effectively. The platform guides users through a journey of self-improvement, from career path selection to skill acquisition.
 
-![UPSKILL Banner](https://i.ibb.co/5XPmQdM/image.png)
+<img src="Screenshot/upskilllogo.png" alt="UPSKILL Banner" width="300"/>
 
 ## 🔍 Key Features:
 
@@ -10,18 +10,6 @@ UPSKILL is an AI-powered personalized learning platform designed to help users a
 - 📋 **Personalized Learning Goals**: Create and track progress on customized learning objectives
 - 📊 **Career Path Planning**: Clear recommended learning paths to help users achieve their professional goals
 - 📝 **Progress Tracking**: Visual indicators to monitor advancement toward goals
-
-## 🖼️ Screenshots
-
-### AI Chat Interface
-![AI Chat](https://i.ibb.co/s9DYV87/image.png)
-
-### Learning Goals Dashboard
-![Learning Goals](https://i.ibb.co/r2M33yX/image.png)
-
-### Career Path Recommendations
-![Career Path](https://i.ibb.co/HfvsqZN/image.png)
-
 ## ⚙️ Technologies Used:
 
 - 🐍 **Backend**: FastAPI (Python) microservices architecture
@@ -68,6 +56,20 @@ upskill/
 ├── docker-compose.yml        # Service configuration
 └── README.md                 # Project documentation
 ```
+## 🖼️ Screenshots
+
+### AI Chat Interface
+
+<img src="Screenshot/AI_Chat.png" alt="AI Chat" width="400"/>
+
+### Learning Goals Dashboard
+<img src="Screenshot/Learning_Goals.png" alt="Learning Goals" width="400"/>
+
+### Career Path Recommendations
+<img src="Screenshot/Career_Path.png" alt="Career Path" width="400"/>
+
+### Career Recommendations
+<img src="Screenshot/Career_Recoommendations.png" alt="Career Recommendations" width="400"/>
 
 ## 📞 Contact:
 
